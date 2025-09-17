@@ -1,0 +1,229 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  firstName String
+  lastName  String
+  phone     String?
+  password  String
+  role      UserRole @default(CUSTOMER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  reservations Reservation[]
+  reviews      Review[]
+
+  @@map("users")
+}
+
+model Restaurant {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  cuisine     String[]
+  address     String
+  city        String
+  state       String
+  zipCode     String
+  country     String   @default("US")
+  latitude    Float
+  longitude   Float
+  phone       String?
+  website     String?
+  email       String?
+  
+  // Business details
+  priceRange  PriceRange @default(MODERATE)
+  rating      Float      @default(0)
+  reviewCount Int        @default(0)
+  
+  // Operating hours
+  mondayOpen    String?
+  mondayClose   String?
+  tuesdayOpen   String?
+  tuesdayClose  String?
+  wednesdayOpen String?
+  wednesdayClose String?
+  thursdayOpen  String?
+  thursdayClose String?
+  fridayOpen    String?
+  fridayClose   String?
+  saturdayOpen  String?
+  saturdayClose String?
+  sundayOpen    String?
+  sundayClose   String?
+  
+  // Features
+  acceptsReservations Boolean @default(true)
+  hasDelivery         Boolean @default(false)
+  hasTakeout          Boolean @default(true)
+  hasOutdoorSeating   Boolean @default(false)
+  hasWifi             Boolean @default(false)
+  hasParking          Boolean @default(false)
+  isWheelchairAccessible Boolean @default(false)
+  
+  // Data source tracking
+  googlePlaceId    String?
+  yelpBusinessId   String?
+  foursquareId     String?
+  dataSource       DataSource @default(MANUAL)
+  lastUpdated      DateTime   @default(now())
+  
+  // Status
+  isActive    Boolean @default(true)
+  isVerified  Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  photos        Photo[]
+  menus         Menu[]
+  reservations  Reservation[]
+  reviews       Review[]
+  availability  Availability[]
+
+  @@map("restaurants")
+}
+
+model Photo {
+  id           String @id @default(cuid())
+  restaurantId String
+  url          String
+  caption      String?
+  isPrimary    Boolean @default(false)
+  uploadedBy   String?
+  createdAt    DateTime @default(now())
+
+  // Relations
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@map("photos")
+}
+
+model Menu {
+  id           String @id @default(cuid())
+  restaurantId String
+  name         String
+  description  String?
+  price        Float?
+  category     String
+  isAvailable  Boolean @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@map("menus")
+}
+
+model Availability {
+  id           String @id @default(cuid())
+  restaurantId String
+  date         DateTime
+  timeSlot     String // e.g., "19:00", "19:30"
+  maxPartySize Int    @default(8)
+  availableSlots Int  @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, date, timeSlot])
+  @@map("availability")
+}
+
+model Reservation {
+  id           String         @id @default(cuid())
+  userId       String
+  restaurantId String
+  date         DateTime
+  timeSlot     String
+  partySize    Int
+  status       ReservationStatus @default(PENDING)
+  specialRequests String?
+  notes        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@map("reservations")
+}
+
+model Review {
+  id           String @id @default(cuid())
+  userId       String
+  restaurantId String
+  rating       Int    // 1-5 stars
+  title        String?
+  comment      String?
+  isVerified   Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@unique([userId, restaurantId])
+  @@map("reviews")
+}
+
+model ApiUsage {
+  id        String   @id @default(cuid())
+  apiName   String   // 'google', 'yelp', 'foursquare'
+  endpoint  String
+  requests  Int      @default(0)
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@unique([apiName, endpoint, date])
+  @@map("api_usage")
+}
+
+// Enums
+enum UserRole {
+  CUSTOMER
+  RESTAURANT_OWNER
+  ADMIN
+}
+
+enum PriceRange {
+  BUDGET
+  MODERATE
+  EXPENSIVE
+  VERY_EXPENSIVE
+}
+
+enum DataSource {
+  GOOGLE_PLACES
+  YELP
+  FOURSQUARE
+  MANUAL
+  SCRAPED
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
