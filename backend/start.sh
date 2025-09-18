@@ -8,4 +8,4 @@ sleep 2
 
 # Start the server
 echo "Starting Afritable backend server..."
-npm run dev
+npm start
