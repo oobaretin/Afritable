@@ -5,8 +5,9 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon src/index.ts",
-    "build": "tsc",
+    "build": "npm run db:generate && tsc",
     "start": "node dist/index.js",
+    "postinstall": "npx prisma generate",
     "seed": "ts-node src/scripts/seed.ts",
     "collect-data": "ts-node src/scripts/collectRestaurantData.ts",
     "enhance-data": "ts-node src/scripts/enhanceRestaurantData.ts",
