@@ -15,7 +15,7 @@ RUN apk add --no-cache \
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies (including dev dependencies for build)
+# Install all dependencies (including dev dependencies for build)
 RUN npm ci
 
 # Copy source code
@@ -27,8 +27,8 @@ RUN npx prisma generate
 # Build TypeScript code
 RUN npm run build
 
-# Remove dev dependencies
-RUN npm prune --production
+# Remove dev dependencies after build
+RUN npm prune --omit=dev
 
 # Create logs directory
 RUN mkdir -p logs
