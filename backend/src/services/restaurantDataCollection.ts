@@ -1,5 +1,5 @@
 import { apiIntegrations, RestaurantData } from './apiIntegrations';
-import { prisma } from '../index';
+import { prisma } from '../db';
 import { logger } from '../utils/logger';
 
 interface MetroArea {

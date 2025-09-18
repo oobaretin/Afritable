@@ -1,6 +1,6 @@
 import express from 'express';
 import Joi from 'joi';
-import { prisma } from '../index';
+import { prisma } from '../db';
 import { protect, authorize, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { restaurantDataCollection } from '../services/restaurantDataCollection';
@@ -65,7 +65,7 @@ router.get('/dashboard', async (req: AuthRequest, res, next) => {
     ]);
 
     // Calculate API usage by day
-    const apiUsageByDay = apiUsage.reduce((acc, usage) => {
+    const apiUsageByDay = apiUsage.reduce((acc: any, usage: any) => {
       const date = usage.date.toISOString().split('T')[0];
       if (!acc[date]) {
         acc[date] = {};
@@ -379,7 +379,7 @@ router.get('/api-usage', async (req: AuthRequest, res, next) => {
     });
 
     // Group by API and date
-    const usageByApi = apiUsage.reduce((acc, usage) => {
+    const usageByApi = apiUsage.reduce((acc: any, usage: any) => {
       if (!acc[usage.apiName]) {
         acc[usage.apiName] = {};
       }

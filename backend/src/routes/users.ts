@@ -1,5 +1,5 @@
 import express from 'express';
-import { prisma } from '../index';
+import { prisma } from '../db';
 import { protect, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 

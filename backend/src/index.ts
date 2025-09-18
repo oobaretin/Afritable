@@ -26,8 +26,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001; // Backend port
 
-// Initialize Prisma
-export const prisma = new PrismaClient();
+// Prisma client is imported from ./db
 
 // Rate limiting
 const limiter = rateLimit({

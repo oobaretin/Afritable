@@ -1,6 +1,6 @@
 import express from 'express';
 import Joi from 'joi';
-import { prisma } from '../index';
+import { prisma } from '../db';
 import { protect, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
@@ -379,7 +379,7 @@ router.get('/stats', protect, async (req: AuthRequest, res, next) => {
       data: {
         total: totalReservations,
         upcoming: upcomingReservations,
-        byStatus: stats.reduce((acc, stat) => {
+        byStatus: stats.reduce((acc: any, stat: any) => {
           acc[stat.status] = stat._count.status;
           return acc;
         }, {} as Record<string, number>),
