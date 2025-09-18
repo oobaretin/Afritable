@@ -211,14 +211,24 @@ const RestaurantsPage: React.FC = () => {
                   {loading ? 'Searching...' : `${restaurants?.length || 0} Restaurants Found`}
                 </h2>
                 
-                {/* Sort Options */}
                 <div className="flex items-center space-x-4">
-                  <span className="text-gray-600">Sort by:</span>
-                  <select className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-                    <option value="rating">Rating</option>
-                    <option value="name">Name</option>
-                    <option value="distance">Distance</option>
-                  </select>
+                  {/* Add Restaurant Button */}
+                  <button
+                    onClick={() => router.push('/add-restaurant')}
+                    className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+                  >
+                    + Add Restaurant
+                  </button>
+                  
+                  {/* Sort Options */}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-gray-600">Sort by:</span>
+                    <select className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                      <option value="rating">Rating</option>
+                      <option value="name">Name</option>
+                      <option value="distance">Distance</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 

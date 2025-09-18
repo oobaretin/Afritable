@@ -83,7 +83,7 @@ process.on('SIGTERM', async () => {
 });
 
 // Initialize data monitoring service (starts scheduled tasks)
-dataMonitoringService.initialize();
+// dataMonitoringService.initialize(); // Disabled - using one-time data collection instead
 
 // Start server
 app.listen(PORT, () => {

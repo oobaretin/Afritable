@@ -453,4 +453,75 @@ async function updateRestaurantRating(restaurantId: string): Promise<void> {
   }
 }
 
+// Add new restaurant
+router.post('/', async (req, res, next) => {
+  try {
+    const {
+      name,
+      description,
+      cuisine,
+      address,
+      city,
+      state,
+      zipCode,
+      phone,
+      website,
+      email,
+      priceRange,
+      acceptsReservations,
+      hasDelivery,
+      hasTakeout,
+      hasOutdoorSeating,
+      hasWifi,
+      hasParking,
+      isWheelchairAccessible,
+    } = req.body;
+
+    // Validate required fields
+    if (!name || !cuisine || !address || !city || !state) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, cuisine, address, city, and state are required'
+      });
+    }
+
+    // Create restaurant
+    const restaurant = await prisma.restaurant.create({
+      data: {
+        name,
+        description: description || null,
+        cuisine,
+        address,
+        city,
+        state,
+        zipCode: zipCode || null,
+        phone: phone || null,
+        website: website || null,
+        email: email || null,
+        priceRange: priceRange || 'MODERATE',
+        rating: 0,
+        reviewCount: 0,
+        acceptsReservations: acceptsReservations || false,
+        hasDelivery: hasDelivery || false,
+        hasTakeout: hasTakeout || false,
+        hasOutdoorSeating: hasOutdoorSeating || false,
+        hasWifi: hasWifi || false,
+        hasParking: hasParking || false,
+        isWheelchairAccessible: isWheelchairAccessible || false,
+        dataSource: 'MANUAL',
+        isActive: true,
+        isVerified: false,
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Restaurant added successfully',
+      data: restaurant
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
