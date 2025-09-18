@@ -93,6 +93,14 @@ const RestaurantsPage: React.FC = () => {
     router.push(`/restaurants?${params.toString()}`);
   };
 
+  const handleMetroChange = (metroAreaId: string | null) => {
+    setSelectedMetro(metroAreaId || '');
+  };
+
+  const handleRegionChange = (regionId: string | null) => {
+    setSelectedRegion(regionId || '');
+  };
+
   const getPriceRange = (priceRange: string) => {
     switch (priceRange) {
       case 'BUDGET': return '$$';
@@ -184,8 +192,8 @@ const RestaurantsPage: React.FC = () => {
                   {/* Metro/Region Search */}
                   <div className="border-t border-gray-200 pt-4">
                     <MetroSearch
-                      onMetroChange={setSelectedMetro}
-                      onRegionChange={setSelectedRegion}
+                      onMetroChange={handleMetroChange}
+                      onRegionChange={handleRegionChange}
                       selectedMetro={selectedMetro}
                       selectedRegion={selectedRegion}
                     />

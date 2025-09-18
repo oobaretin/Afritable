@@ -21,6 +21,14 @@ const Hero: React.FC = () => {
     }
   };
 
+  const handleMetroChange = (metroAreaId: string | null) => {
+    setSelectedMetro(metroAreaId || '');
+  };
+
+  const handleRegionChange = (regionId: string | null) => {
+    setSelectedRegion(regionId || '');
+  };
+
   return (
     <section className="hero-gradient text-white py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -68,8 +76,8 @@ const Hero: React.FC = () => {
               {/* Metro/Region Search */}
               <div className="border-t border-gray-200 pt-4">
                 <MetroSearch
-                  onMetroChange={setSelectedMetro}
-                  onRegionChange={setSelectedRegion}
+                  onMetroChange={handleMetroChange}
+                  onRegionChange={handleRegionChange}
                   selectedMetro={selectedMetro}
                   selectedRegion={selectedRegion}
                 />
