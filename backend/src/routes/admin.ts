@@ -1,7 +1,7 @@
 import express from 'express';
 import Joi from 'joi';
 import { prisma } from '../index';
-import { protect, authorize } from '../middleware/auth';
+import { protect, authorize, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { restaurantDataCollection } from '../services/restaurantDataCollection';
 import { logger } from '../utils/logger';
@@ -15,7 +15,7 @@ router.use(authorize('ADMIN'));
 // @desc    Get dashboard statistics
 // @route   GET /api/admin/dashboard
 // @access  Private/Admin
-router.get('/dashboard', async (req, res, next) => {
+router.get('/dashboard', async (req: AuthRequest, res, next) => {
   try {
     const [
       totalRestaurants,
@@ -99,7 +99,7 @@ router.get('/dashboard', async (req, res, next) => {
 // @desc    Get all restaurants with admin details
 // @route   GET /api/admin/restaurants
 // @access  Private/Admin
-router.get('/restaurants', async (req, res, next) => {
+router.get('/restaurants', async (req: AuthRequest, res, next) => {
   try {
     const {
       page = 1,
@@ -182,7 +182,7 @@ router.get('/restaurants', async (req, res, next) => {
 // @desc    Update restaurant status
 // @route   PUT /api/admin/restaurants/:id/status
 // @access  Private/Admin
-router.put('/restaurants/:id/status', async (req, res, next) => {
+router.put('/restaurants/:id/status', async (req: AuthRequest, res, next) => {
   try {
     const statusSchema = Joi.object({
       isActive: Joi.boolean().optional(),
@@ -219,7 +219,7 @@ router.put('/restaurants/:id/status', async (req, res, next) => {
 // @desc    Get all users
 // @route   GET /api/admin/users
 // @access  Private/Admin
-router.get('/users', async (req, res, next) => {
+router.get('/users', async (req: AuthRequest, res, next) => {
   try {
     const {
       page = 1,
@@ -295,7 +295,7 @@ router.get('/users', async (req, res, next) => {
 // @desc    Update user status
 // @route   PUT /api/admin/users/:id/status
 // @access  Private/Admin
-router.put('/users/:id/status', async (req, res, next) => {
+router.put('/users/:id/status', async (req: AuthRequest, res, next) => {
   try {
     const statusSchema = Joi.object({
       isActive: Joi.boolean().required(),
@@ -340,7 +340,7 @@ router.put('/users/:id/status', async (req, res, next) => {
 // @desc    Trigger restaurant data collection
 // @route   POST /api/admin/collect-data
 // @access  Private/Admin
-router.post('/collect-data', async (req, res, next) => {
+router.post('/collect-data', async (req: AuthRequest, res, next) => {
   try {
     // Run data collection in background
     restaurantDataCollection.collectRestaurantData()
@@ -363,7 +363,7 @@ router.post('/collect-data', async (req, res, next) => {
 // @desc    Get API usage statistics
 // @route   GET /api/admin/api-usage
 // @access  Private/Admin
-router.get('/api-usage', async (req, res, next) => {
+router.get('/api-usage', async (req: AuthRequest, res, next) => {
   try {
     const { days = 7 } = req.query;
     const daysNum = parseInt(days as string);
@@ -400,7 +400,7 @@ router.get('/api-usage', async (req, res, next) => {
 // @desc    Get system health
 // @route   GET /api/admin/health
 // @access  Private/Admin
-router.get('/health', async (req, res, next) => {
+router.get('/health', async (req: AuthRequest, res, next) => {
   try {
     const [
       dbConnection,

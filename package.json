@@ -15,7 +15,11 @@
     "db:generate": "cd backend && npx prisma generate",
     "db:push": "cd backend && npx prisma db push",
     "db:migrate": "cd backend && npx prisma migrate dev",
-    "db:seed": "cd backend && npm run seed"
+    "db:seed": "cd backend && npm run seed",
+    "collect-data": "cd backend && npm run collect-data",
+    "collect-metro-data": "cd backend && npm run collect-metro-data",
+    "enhance-data": "cd backend && npm run enhance-data",
+    "test-apis": "cd backend && npm run test-apis"
   },
   "keywords": ["restaurant", "reservation", "african", "food", "booking"],
   "author": "Afritable Team",

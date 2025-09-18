@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { logger } from '../utils/logger';
-import { prisma } from '../index';
+import { prisma } from '../db';
 
 interface ApiResponse {
   success: boolean;
@@ -21,7 +21,7 @@ interface RestaurantData {
   rating?: number;
   reviewCount?: number;
   priceRange?: string;
-  cuisine?: string[];
+  cuisine?: string;
   photos?: string[];
   placeId?: string;
   businessId?: string;
@@ -144,6 +144,7 @@ class ApiIntegrations {
           photos: place.photos?.map((photo: any) => 
             `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photo_reference}&key=${this.googleApiKey}`
           ) || [],
+          cuisine: 'African',
         }));
 
         return { success: true, data: restaurants };
@@ -197,7 +198,7 @@ class ApiIntegrations {
         priceRange: business.price || 'MODERATE',
         businessId: business.id,
         photos: business.image_url ? [business.image_url] : [],
-        cuisine: business.categories?.map((cat: any) => cat.title) || [],
+        cuisine: business.categories?.map((cat: any) => cat.title).join(',') || 'African',
       }));
 
       return { success: true, data: restaurants };
@@ -250,7 +251,7 @@ class ApiIntegrations {
         photos: place.photos?.map((photo: any) => 
           `${photo.prefix}400x400${photo.suffix}`
         ) || [],
-        cuisine: place.categories?.map((cat: any) => cat.name) || [],
+        cuisine: place.categories?.map((cat: any) => cat.name).join(',') || 'African',
       }));
 
       return { success: true, data: restaurants };

@@ -1,7 +1,7 @@
 import express from 'express';
 import Joi from 'joi';
 import { prisma } from '../index';
-import { protect } from '../middleware/auth';
+import { protect, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 
@@ -10,7 +10,7 @@ const router = express.Router();
 // @desc    Get user's reservations
 // @route   GET /api/reservations
 // @access  Private
-router.get('/', protect, async (req, res, next) => {
+router.get('/', protect, async (req: AuthRequest, res, next) => {
   try {
     const { page = 1, limit = 10, status } = req.query;
 
@@ -70,7 +70,7 @@ router.get('/', protect, async (req, res, next) => {
 // @desc    Get single reservation
 // @route   GET /api/reservations/:id
 // @access  Private
-router.get('/:id', protect, async (req, res, next) => {
+router.get('/:id', protect, async (req: AuthRequest, res, next) => {
   try {
     const reservation = await prisma.reservation.findFirst({
       where: {
@@ -105,7 +105,7 @@ router.get('/:id', protect, async (req, res, next) => {
 // @desc    Create new reservation
 // @route   POST /api/reservations
 // @access  Private
-router.post('/', protect, async (req, res, next) => {
+router.post('/', protect, async (req: AuthRequest, res, next) => {
   try {
     const reservationSchema = Joi.object({
       restaurantId: Joi.string().required(),
@@ -200,7 +200,7 @@ router.post('/', protect, async (req, res, next) => {
 // @desc    Update reservation
 // @route   PUT /api/reservations/:id
 // @access  Private
-router.put('/:id', protect, async (req, res, next) => {
+router.put('/:id', protect, async (req: AuthRequest, res, next) => {
   try {
     const updateSchema = Joi.object({
       date: Joi.date().min('now').optional(),
@@ -282,7 +282,7 @@ router.put('/:id', protect, async (req, res, next) => {
 // @desc    Cancel reservation
 // @route   PUT /api/reservations/:id/cancel
 // @access  Private
-router.put('/:id/cancel', protect, async (req, res, next) => {
+router.put('/:id/cancel', protect, async (req: AuthRequest, res, next) => {
   try {
     // Check if reservation exists and belongs to user
     const reservation = await prisma.reservation.findFirst({
@@ -354,7 +354,7 @@ router.put('/:id/cancel', protect, async (req, res, next) => {
 // @desc    Get reservation statistics
 // @route   GET /api/reservations/stats
 // @access  Private
-router.get('/stats', protect, async (req, res, next) => {
+router.get('/stats', protect, async (req: AuthRequest, res, next) => {
   try {
     const stats = await prisma.reservation.groupBy({
       by: ['status'],

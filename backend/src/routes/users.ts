@@ -1,6 +1,6 @@
 import express from 'express';
 import { prisma } from '../index';
-import { protect } from '../middleware/auth';
+import { protect, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 
 const router = express.Router();
@@ -8,7 +8,7 @@ const router = express.Router();
 // @desc    Get user profile
 // @route   GET /api/users/profile
 // @access  Private
-router.get('/profile', protect, async (req, res, next) => {
+router.get('/profile', protect, async (req: AuthRequest, res, next) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
@@ -46,7 +46,7 @@ router.get('/profile', protect, async (req, res, next) => {
 // @desc    Get user's favorite restaurants
 // @route   GET /api/users/favorites
 // @access  Private
-router.get('/favorites', protect, async (req, res, next) => {
+router.get('/favorites', protect, async (req: AuthRequest, res, next) => {
   try {
     const { page = 1, limit = 20 } = req.query;
 
@@ -110,7 +110,7 @@ router.get('/favorites', protect, async (req, res, next) => {
 // @desc    Get user's review history
 // @route   GET /api/users/reviews
 // @access  Private
-router.get('/reviews', protect, async (req, res, next) => {
+router.get('/reviews', protect, async (req: AuthRequest, res, next) => {
   try {
     const { page = 1, limit = 10 } = req.query;
 

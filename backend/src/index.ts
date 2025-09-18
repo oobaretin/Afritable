@@ -16,12 +16,15 @@ import restaurantRoutes from './routes/restaurants';
 import reservationRoutes from './routes/reservations';
 import userRoutes from './routes/users';
 import adminRoutes from './routes/admin';
+import dataQualityRoutes from './routes/dataQuality';
+import locationRoutes from './routes/locations';
+import { dataMonitoringService } from './services/dataMonitoringService';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3001; // Backend port
 
 // Initialize Prisma
 export const prisma = new PrismaClient();
@@ -60,6 +63,8 @@ app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/data-quality', dataQualityRoutes);
+app.use('/api/locations', locationRoutes);
 
 // Error handling middleware
 app.use(notFound);
@@ -78,10 +83,14 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
+// Initialize data monitoring service (starts scheduled tasks)
+dataMonitoringService.initialize();
+
 // Start server
 app.listen(PORT, () => {
   logger.info(`🚀 Server running on port ${PORT}`);
   logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.info(`🔄 Data monitoring service initialized with scheduled tasks`);
 });
 
 export default app;

@@ -40,7 +40,7 @@ async function main() {
         longitude: -95.3698,
         phone: '(713) 555-0123',
         website: 'https://addisababa-restaurant.com',
-        cuisine: ['Ethiopian', 'African'],
+        cuisine: 'Ethiopian,African',
         priceRange: 'MODERATE',
         rating: 4.5,
         reviewCount: 127,
@@ -66,7 +66,7 @@ async function main() {
         longitude: -95.3698,
         phone: '(713) 555-0456',
         website: 'https://nigerian-kitchen.com',
-        cuisine: ['Nigerian', 'West African'],
+        cuisine: 'Nigerian,West African',
         priceRange: 'MODERATE',
         rating: 4.3,
         reviewCount: 89,
@@ -92,7 +92,7 @@ async function main() {
         longitude: -95.3698,
         phone: '(713) 555-0789',
         website: 'https://marrakech-moroccan.com',
-        cuisine: ['Moroccan', 'North African'],
+        cuisine: 'Moroccan,North African',
         priceRange: 'EXPENSIVE',
         rating: 4.7,
         reviewCount: 203,
@@ -110,16 +110,8 @@ async function main() {
     ];
 
     for (const restaurantData of sampleRestaurants) {
-      const restaurant = await prisma.restaurant.upsert({
-        where: {
-          name_latitude_longitude: {
-            name: restaurantData.name,
-            latitude: restaurantData.latitude,
-            longitude: restaurantData.longitude,
-          },
-        },
-        update: {},
-        create: restaurantData,
+      const restaurant = await prisma.restaurant.create({
+        data: restaurantData,
       });
 
       console.log('Sample restaurant created:', restaurant.name);

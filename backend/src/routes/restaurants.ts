@@ -1,9 +1,10 @@
 import express from 'express';
 import Joi from 'joi';
-import { prisma } from '../index';
-import { protect } from '../middleware/auth';
+import { prisma } from '../db';
+import { protect, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
+import { getMetroAreaById, getRegionById } from '../data/metroAreas';
 
 const router = express.Router();
 
@@ -26,6 +27,8 @@ router.get('/', async (req, res, next) => {
       latitude,
       longitude,
       radius = 25, // miles
+      metroArea,
+      region,
     } = req.query;
 
     const pageNum = parseInt(page as string);
@@ -39,22 +42,22 @@ router.get('/', async (req, res, next) => {
 
     if (search) {
       where.OR = [
-        { name: { contains: search as string, mode: 'insensitive' } },
-        { description: { contains: search as string, mode: 'insensitive' } },
-        { cuisine: { has: search as string } },
+        { name: { contains: search as string } },
+        { description: { contains: search as string } },
+        { cuisine: { contains: search as string } },
       ];
     }
 
     if (cuisine) {
-      where.cuisine = { has: cuisine as string };
+      where.cuisine = { contains: cuisine as string };
     }
 
     if (city) {
-      where.city = { contains: city as string, mode: 'insensitive' };
+      where.city = { contains: city as string };
     }
 
     if (state) {
-      where.state = { contains: state as string, mode: 'insensitive' };
+      where.state = { contains: state as string };
     }
 
     if (priceRange) {
@@ -63,6 +66,43 @@ router.get('/', async (req, res, next) => {
 
     if (rating) {
       where.rating = { gte: parseFloat(rating as string) };
+    }
+
+    // Metro area filtering
+    if (metroArea) {
+      const metroAreaData = getMetroAreaById(metroArea as string);
+      if (metroAreaData) {
+        where.OR = [
+          { city: { contains: metroAreaData.name } },
+          { state: metroAreaData.state },
+          {
+            AND: [
+              { latitude: { gte: metroAreaData.coordinates.latitude - 0.5 } },
+              { latitude: { lte: metroAreaData.coordinates.latitude + 0.5 } },
+              { longitude: { gte: metroAreaData.coordinates.longitude - 0.5 } },
+              { longitude: { lte: metroAreaData.coordinates.longitude + 0.5 } }
+            ]
+          }
+        ];
+      }
+    }
+
+    // Region filtering
+    if (region) {
+      const regionData = getRegionById(region as string);
+      if (regionData) {
+        where.OR = [
+          { city: { contains: regionData.name } },
+          {
+            AND: [
+              { latitude: { gte: regionData.coordinates.latitude - 0.2 } },
+              { latitude: { lte: regionData.coordinates.latitude + 0.2 } },
+              { longitude: { gte: regionData.coordinates.longitude - 0.2 } },
+              { longitude: { lte: regionData.coordinates.longitude + 0.2 } }
+            ]
+          }
+        ];
+      }
     }
 
     // Location-based filtering
@@ -289,7 +329,7 @@ router.get('/:id/reviews', async (req, res, next) => {
 // @desc    Create restaurant review
 // @route   POST /api/restaurants/:id/reviews
 // @access  Private
-router.post('/:id/reviews', protect, async (req, res, next) => {
+router.post('/:id/reviews', protect, async (req: AuthRequest, res, next) => {
   try {
     const reviewSchema = Joi.object({
       rating: Joi.number().min(1).max(5).required(),
@@ -368,7 +408,7 @@ router.get('/cuisines/list', async (req, res, next) => {
       where: { isActive: true },
     });
 
-    const allCuisines = cuisines.flatMap(r => r.cuisine);
+    const allCuisines = cuisines.flatMap(r => r.cuisine.split(','));
     const uniqueCuisines = [...new Set(allCuisines)].sort();
 
     res.json({

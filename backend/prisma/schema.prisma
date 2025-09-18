@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -17,7 +17,7 @@ model User {
   lastName  String
   phone     String?
   password  String
-  role      UserRole @default(CUSTOMER)
+  role      String @default("CUSTOMER")
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -33,7 +33,7 @@ model Restaurant {
   id          String   @id @default(cuid())
   name        String
   description String?
-  cuisine     String[]
+  cuisine     String
   address     String
   city        String
   state       String
@@ -46,7 +46,7 @@ model Restaurant {
   email       String?
   
   // Business details
-  priceRange  PriceRange @default(MODERATE)
+  priceRange  String @default("MODERATE")
   rating      Float      @default(0)
   reviewCount Int        @default(0)
   
@@ -79,7 +79,7 @@ model Restaurant {
   googlePlaceId    String?
   yelpBusinessId   String?
   foursquareId     String?
-  dataSource       DataSource @default(MANUAL)
+  dataSource       String @default("MANUAL")
   lastUpdated      DateTime   @default(now())
   
   // Status
@@ -154,7 +154,7 @@ model Reservation {
   date         DateTime
   timeSlot     String
   partySize    Int
-  status       ReservationStatus @default(PENDING)
+  status       String @default("PENDING")
   specialRequests String?
   notes        String?
   createdAt    DateTime       @default(now())
@@ -198,32 +198,4 @@ model ApiUsage {
   @@map("api_usage")
 }
 
-// Enums
-enum UserRole {
-  CUSTOMER
-  RESTAURANT_OWNER
-  ADMIN
-}
-
-enum PriceRange {
-  BUDGET
-  MODERATE
-  EXPENSIVE
-  VERY_EXPENSIVE
-}
-
-enum DataSource {
-  GOOGLE_PLACES
-  YELP
-  FOURSQUARE
-  MANUAL
-  SCRAPED
-}
-
-enum ReservationStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
-  COMPLETED
-  NO_SHOW
-}
+// Note: Using String types instead of enums for SQLite compatibility

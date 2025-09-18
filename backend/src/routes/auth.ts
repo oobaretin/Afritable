@@ -5,6 +5,7 @@ import Joi from 'joi';
 import { prisma } from '../index';
 import { protect } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
+import { AuthRequest } from '../middleware/auth';
 import { logger } from '../utils/logger';
 
 const router = express.Router();
@@ -25,9 +26,9 @@ const loginSchema = Joi.object({
 
 // Generate JWT token
 const generateToken = (id: string) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET!, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  });
+  const secret = process.env.JWT_SECRET || 'fallback-secret-key';
+  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+  return jwt.sign({ id }, secret, { expiresIn } as jwt.SignOptions);
 };
 
 // @desc    Register user
@@ -140,7 +141,7 @@ router.post('/login', async (req, res, next) => {
 // @desc    Get current user
 // @route   GET /api/auth/me
 // @access  Private
-router.get('/me', protect, async (req, res, next) => {
+router.get('/me', protect, async (req: AuthRequest, res, next) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
@@ -172,7 +173,7 @@ router.get('/me', protect, async (req, res, next) => {
 // @desc    Update user profile
 // @route   PUT /api/auth/profile
 // @access  Private
-router.put('/profile', protect, async (req, res, next) => {
+router.put('/profile', protect, async (req: AuthRequest, res, next) => {
   try {
     const updateSchema = Joi.object({
       firstName: Joi.string().min(2).max(50),
@@ -211,7 +212,7 @@ router.put('/profile', protect, async (req, res, next) => {
 // @desc    Change password
 // @route   PUT /api/auth/change-password
 // @access  Private
-router.put('/change-password', protect, async (req, res, next) => {
+router.put('/change-password', protect, async (req: AuthRequest, res, next) => {
   try {
     const changePasswordSchema = Joi.object({
       currentPassword: Joi.string().required(),

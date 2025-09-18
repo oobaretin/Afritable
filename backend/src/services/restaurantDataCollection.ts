@@ -257,7 +257,7 @@ class RestaurantDataCollection {
           yelpBusinessId: restaurantData.businessId,
           foursquareId: restaurantData.foursquareId,
           dataSource: this.determineDataSource(restaurantData),
-          cuisine: restaurantData.cuisine || ['African'],
+          cuisine: restaurantData.cuisine || 'African',
         }
       });
 
