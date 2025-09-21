@@ -1,7 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 const CuisineCategories: React.FC = () => {
+  const router = useRouter();
+  
   const cuisines = [
     {
       name: 'Ethiopian',
@@ -85,7 +88,10 @@ const CuisineCategories: React.FC = () => {
               We're constantly adding new restaurants and cuisines. 
               Let us know what you'd like to see!
             </p>
-            <button className="btn-primary">
+            <button 
+              onClick={() => router.push('/add-restaurant')}
+              className="btn-primary"
+            >
               Suggest a Restaurant
             </button>
           </div>

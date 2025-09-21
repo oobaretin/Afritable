@@ -18,6 +18,7 @@ import userRoutes from './routes/users';
 import adminRoutes from './routes/admin';
 import dataQualityRoutes from './routes/dataQuality';
 import locationRoutes from './routes/locations';
+import healthRoutes from './routes/health';
 import { dataMonitoringService } from './services/dataMonitoringService';
 
 // Load environment variables
@@ -40,21 +41,20 @@ app.use(helmet());
 app.use(compression());
 app.use(limiter);
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002', 
+    'http://localhost:3003'
+  ],
   credentials: true,
 }));
 app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Health check
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-  });
-});
+// Health check routes
+app.use('/api', healthRoutes);
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -83,7 +83,7 @@ process.on('SIGTERM', async () => {
 });
 
 // Initialize data monitoring service (starts scheduled tasks)
-// dataMonitoringService.initialize(); // Disabled - using one-time data collection instead
+// dataMonitoringService.initialize(); // DISABLED - prevents unwanted data collection
 
 // Start server
 app.listen(PORT, () => {

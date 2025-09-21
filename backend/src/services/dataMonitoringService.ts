@@ -596,8 +596,10 @@ export class DataMonitoringService {
 
   public initialize(): void {
     logger.info('Initializing data monitoring service...');
-    this.startMonitoringSchedule();
-    logger.info('Data monitoring service initialized with scheduled tasks');
+    // DISABLED: All scheduled data collection tasks to prevent unwanted data addition
+    // this.startMonitoringSchedule();
+    logger.info('Data monitoring service initialized - scheduled tasks DISABLED');
+    logger.info('Only manual photo enhancement is enabled');
   }
 }
 

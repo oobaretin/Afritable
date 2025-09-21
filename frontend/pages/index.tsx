@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Header from '../components/Layout/Header';
 import Footer from '../components/Layout/Footer';
 import Hero from '../components/Home/Hero';
+import CallToAction from '../components/Home/CallToAction';
 import FeaturedRestaurants from '../components/Home/FeaturedRestaurants';
 import CuisineCategories from '../components/Home/CuisineCategories';
 import HowItWorks from '../components/Home/HowItWorks';
@@ -27,6 +28,7 @@ const Home: React.FC = () => {
         
         <main>
           <Hero />
+          <CallToAction />
           <FeaturedRestaurants />
           <CuisineCategories />
           <HowItWorks />

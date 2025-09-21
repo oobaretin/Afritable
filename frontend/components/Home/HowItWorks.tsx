@@ -1,6 +1,9 @@
 import React from 'react';
+import { useRouter } from 'next/router';
 
 const HowItWorks: React.FC = () => {
+  const router = useRouter();
+  
   const steps = [
     {
       number: '01',
@@ -96,7 +99,10 @@ const HowItWorks: React.FC = () => {
             <p className="text-orange-100 mb-6 max-w-2xl mx-auto">
               Join thousands of food lovers who have found their new favorite restaurants through Afritable.
             </p>
-            <button className="bg-white text-orange-600 hover:bg-gray-100 font-semibold py-3 px-8 rounded-lg transition-colors duration-200">
+            <button 
+              onClick={() => router.push('/restaurants')}
+              className="bg-white text-orange-600 hover:bg-gray-100 font-semibold py-3 px-8 rounded-lg transition-colors duration-200"
+            >
               Start Exploring
             </button>
           </div>

@@ -18,6 +18,7 @@ interface RestaurantData {
   longitude: number;
   phone?: string;
   website?: string;
+  email?: string;
   rating?: number;
   reviewCount?: number;
   priceRange?: string;
@@ -26,6 +27,22 @@ interface RestaurantData {
   placeId?: string;
   businessId?: string;
   foursquareId?: string;
+  hours?: {
+    mondayOpen?: string;
+    mondayClose?: string;
+    tuesdayOpen?: string;
+    tuesdayClose?: string;
+    wednesdayOpen?: string;
+    wednesdayClose?: string;
+    thursdayOpen?: string;
+    thursdayClose?: string;
+    fridayOpen?: string;
+    fridayClose?: string;
+    saturdayOpen?: string;
+    saturdayClose?: string;
+    sundayOpen?: string;
+    sundayClose?: string;
+  };
 }
 
 class ApiIntegrations {
@@ -121,31 +138,42 @@ class ApiIntegrations {
           radius,
           key: this.googleApiKey,
           type: 'restaurant',
+          fields: 'place_id,name,formatted_address,geometry,rating,user_ratings_total,price_level,photos,opening_hours,formatted_phone_number,website,url'
         },
       });
 
       await this.trackApiUsage('google', 'text-search');
 
       if (response.data.status === 'OK') {
-        const restaurants = response.data.results.map((place: any) => ({
-          name: place.name,
-          address: place.formatted_address,
-          city: this.extractCityFromAddress(place.formatted_address),
-          state: this.extractStateFromAddress(place.formatted_address),
-          zipCode: this.extractZipFromAddress(place.formatted_address),
-          latitude: place.geometry.location.lat,
-          longitude: place.geometry.location.lng,
-          phone: place.formatted_phone_number,
-          website: place.website,
-          rating: place.rating,
-          reviewCount: place.user_ratings_total,
-          priceRange: this.mapGooglePriceLevel(place.price_level),
-          placeId: place.place_id,
-          photos: place.photos?.map((photo: any) => 
-            `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photo_reference}&key=${this.googleApiKey}`
-          ) || [],
-          cuisine: 'African',
-        }));
+        const restaurants = await Promise.all(
+          response.data.results.map(async (place: any) => {
+            // Get detailed information for each place
+            const detailsResponse = await this.getGooglePlaceDetails(place.place_id);
+            const details = detailsResponse.success ? detailsResponse.data : {};
+            
+            return {
+              name: place.name,
+              address: place.formatted_address,
+              city: this.extractCityFromAddress(place.formatted_address),
+              state: this.extractStateFromAddress(place.formatted_address),
+              zipCode: this.extractZipFromAddress(place.formatted_address),
+              latitude: place.geometry.location.lat,
+              longitude: place.geometry.location.lng,
+              phone: details.formatted_phone_number || place.formatted_phone_number,
+              website: details.website || place.website,
+              email: details.email,
+              rating: place.rating,
+              reviewCount: place.user_ratings_total,
+              priceRange: this.mapGooglePriceLevel(place.price_level),
+              placeId: place.place_id,
+              photos: place.photos?.map((photo: any) => 
+                `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photo_reference}&key=${this.googleApiKey}`
+              ) || [],
+              cuisine: 'African',
+              hours: this.parseOpeningHours(details.opening_hours || place.opening_hours)
+            };
+          })
+        );
 
         return { success: true, data: restaurants };
       } else {
@@ -322,6 +350,43 @@ class ApiIntegrations {
       logger.error('Google Places details API error:', error);
       return { success: false, error: 'Failed to fetch place details from Google Places' };
     }
+  }
+
+
+  // Parse opening hours from Google Places API
+  private parseOpeningHours(openingHours?: any): any {
+    if (!openingHours || !openingHours.weekday_text) {
+      return null;
+    }
+
+    const hours: any = {};
+    const dayMap: { [key: string]: string } = {
+      'Monday': 'monday',
+      'Tuesday': 'tuesday', 
+      'Wednesday': 'wednesday',
+      'Thursday': 'thursday',
+      'Friday': 'friday',
+      'Saturday': 'saturday',
+      'Sunday': 'sunday'
+    };
+
+  openingHours.weekday_text.forEach((dayText: string) => {
+    const [day, time] = dayText.split(': ');
+    const dayKey = dayMap[day];
+    if (dayKey && time && time !== 'Closed') {
+      // Handle different time formats
+      const timeParts = time.split(' – ');
+      if (timeParts.length === 2) {
+        hours[`${dayKey}Open`] = timeParts[0];
+        hours[`${dayKey}Close`] = timeParts[1];
+      } else {
+        // If no separator, store the whole time as open
+        hours[`${dayKey}Open`] = time;
+      }
+    }
+  });
+
+    return hours;
   }
 }
 

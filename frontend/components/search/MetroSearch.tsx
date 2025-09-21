@@ -4,7 +4,15 @@ interface MetroArea {
   id: string;
   name: string;
   state: string;
-  regionsCount: number;
+  restaurantCount: number;
+}
+
+interface GroupedMetroAreas {
+  'United States': MetroArea[];
+  'Canada': MetroArea[];
+  'Europe': MetroArea[];
+  'Africa': MetroArea[];
+  'Caribbean': MetroArea[];
 }
 
 interface Region {
@@ -28,7 +36,7 @@ const MetroSearch: React.FC<MetroSearchProps> = ({
   selectedRegion,
   className = ''
 }) => {
-  const [metroAreas, setMetroAreas] = useState<MetroArea[]>([]);
+  const [groupedMetroAreas, setGroupedMetroAreas] = useState<GroupedMetroAreas | null>(null);
   const [regions, setRegions] = useState<Region[]>([]);
   const [loading, setLoading] = useState(false);
   const [regionsLoading, setRegionsLoading] = useState(false);
@@ -54,7 +62,7 @@ const MetroSearch: React.FC<MetroSearchProps> = ({
       const response = await fetch('http://localhost:3001/api/locations/metro-areas');
       const data = await response.json();
       if (data.success) {
-        setMetroAreas(data.data);
+        setGroupedMetroAreas(data.data);
       }
     } catch (error) {
       console.error('Error fetching metro areas:', error);
@@ -103,10 +111,16 @@ const MetroSearch: React.FC<MetroSearchProps> = ({
           className="w-full px-4 py-3 text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
         >
           <option value="">Select a metro area</option>
-          {metroAreas.map((metro) => (
-            <option key={metro.id} value={metro.id}>
-              {metro.name}, {metro.state} ({metro.regionsCount} regions)
-            </option>
+          {groupedMetroAreas && Object.entries(groupedMetroAreas).map(([region, metros]: [string, any[]]) => (
+            metros.length > 0 && (
+              <optgroup key={region} label={region}>
+                {metros.map((metro: any) => (
+                  <option key={metro.id} value={metro.id}>
+                    {metro.name}, {metro.state} ({metro.restaurantCount} restaurants)
+                  </option>
+                ))}
+              </optgroup>
+            )
           ))}
         </select>
         {loading && (
@@ -128,7 +142,7 @@ const MetroSearch: React.FC<MetroSearchProps> = ({
             className="w-full px-4 py-3 text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
           >
             <option value="">All regions in this metro area</option>
-            {regions.map((region) => (
+            {regions.map((region: any) => (
               <option key={region.id} value={region.id}>
                 {region.name} ({region.restaurantsCount} restaurants)
               </option>
@@ -144,7 +158,7 @@ const MetroSearch: React.FC<MetroSearchProps> = ({
       <div>
         <p className="text-sm font-medium text-gray-700 mb-2">Quick Select:</p>
         <div className="flex flex-wrap gap-2">
-          {metroAreas.slice(0, 6).map((metro) => (
+          {groupedMetroAreas && Object.values(groupedMetroAreas).flat().slice(0, 6).map((metro) => (
             <button
               key={metro.id}
               onClick={() => onMetroChange(metro.id)}

@@ -8,6 +8,217 @@ import { getMetroAreaById, getRegionById } from '../data/metroAreas';
 
 const router = express.Router();
 
+// @desc    Get restaurants grouped by country with pagination
+// @route   GET /api/restaurants/grouped
+// @access  Public
+router.get('/grouped', async (req, res, next) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      cuisine,
+      city,
+      state,
+      priceRange,
+      rating,
+      sortBy = 'rating',
+      sortOrder = 'desc',
+      latitude,
+      longitude,
+      radius = 25, // miles
+      metroArea,
+      region,
+    } = req.query;
+
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Build where clause - only US African restaurants
+    const where: any = {
+      isActive: true,
+      country: 'US', // Only US restaurants
+      // Default to African cuisine if no specific cuisine is requested
+      ...(cuisine ? {} : {
+        OR: [
+          { cuisine: { contains: 'African' } },
+          { cuisine: { contains: 'Ethiopian' } },
+          { cuisine: { contains: 'Nigerian' } },
+          { cuisine: { contains: 'Ghanaian' } },
+          { cuisine: { contains: 'Kenyan' } },
+          { cuisine: { contains: 'Somali' } },
+          { cuisine: { contains: 'Moroccan' } },
+          { cuisine: { contains: 'Caribbean' } },
+          { cuisine: { contains: 'Jamaican' } },
+          { cuisine: { contains: 'Haitian' } },
+          { cuisine: { contains: 'Trinidadian' } },
+        ]
+      })
+    };
+
+    // Add specific filters
+    if (search) {
+      where.AND = where.AND || [];
+      where.AND.push({
+        OR: [
+          { name: { contains: search as string } },
+          { description: { contains: search as string } },
+          { cuisine: { contains: search as string } },
+          { city: { contains: search as string } },
+          { state: { contains: search as string } },
+        ]
+      });
+    }
+
+    if (cuisine) {
+      where.AND = where.AND || [];
+      where.AND.push({
+        cuisine: { contains: cuisine as string }
+      });
+    }
+
+    if (city) {
+      where.AND = where.AND || [];
+      where.AND.push({
+        city: { contains: city as string }
+      });
+    }
+
+    if (state) {
+      where.AND = where.AND || [];
+      where.AND.push({
+        state: { contains: state as string }
+      });
+    }
+
+    if (priceRange) {
+      where.AND = where.AND || [];
+      where.AND.push({
+        priceRange: priceRange as string
+      });
+    }
+
+    if (rating) {
+      where.AND = where.AND || [];
+      where.AND.push({
+        rating: { gte: parseFloat(rating as string) }
+      });
+    }
+
+    // Metro area filtering
+    if (metroArea) {
+      const metroAreaData = getMetroAreaById(metroArea as string);
+      if (metroAreaData) {
+        where.AND = where.AND || [];
+        where.AND.push({
+          OR: [
+            { city: { contains: metroAreaData.name } },
+            { state: metroAreaData.state },
+            {
+              AND: [
+                { latitude: { gte: metroAreaData.coordinates.latitude - 0.5 } },
+                { latitude: { lte: metroAreaData.coordinates.latitude + 0.5 } },
+                { longitude: { gte: metroAreaData.coordinates.longitude - 0.5 } },
+                { longitude: { lte: metroAreaData.coordinates.longitude + 0.5 } }
+              ]
+            }
+          ]
+        });
+      }
+    }
+
+    // Region filtering
+    if (region) {
+      const regionData = getRegionById(region as string);
+      if (regionData) {
+        where.AND = where.AND || [];
+        where.AND.push({
+          OR: [
+            { city: { contains: regionData.name } },
+            {
+              AND: [
+                { latitude: { gte: regionData.coordinates.latitude - 0.2 } },
+                { latitude: { lte: regionData.coordinates.latitude + 0.2 } },
+                { longitude: { gte: regionData.coordinates.longitude - 0.2 } },
+                { longitude: { lte: regionData.coordinates.longitude + 0.2 } }
+              ]
+            }
+          ]
+        });
+      }
+    }
+
+    // Get total count
+    const total = await prisma.restaurant.count({ where });
+
+    // Get restaurants with pagination
+    const restaurants = await prisma.restaurant.findMany({
+      where,
+      include: {
+        photos: {
+          where: { isPrimary: true },
+          take: 1,
+        },
+        _count: {
+          select: { reviews: true },
+        },
+      },
+      distinct: ['name', 'address'],
+      orderBy: {
+        [sortBy as string]: sortOrder as 'asc' | 'desc',
+      },
+      skip,
+      take: limitNum,
+    });
+
+    // Group restaurants by country
+    const groupedRestaurants: { [key: string]: any[] } = {};
+    
+    restaurants.forEach(restaurant => {
+      const country = restaurant.country || 'Unknown';
+      if (!groupedRestaurants[country]) {
+        groupedRestaurants[country] = [];
+      }
+      groupedRestaurants[country].push(restaurant);
+    });
+
+    // Sort countries: US first, then African countries, then others
+    const sortedCountries = Object.keys(groupedRestaurants).sort((a, b) => {
+      if (a === 'US') return -1;
+      if (b === 'US') return 1;
+      
+      // African countries
+      const africanCountries = ['NG', 'KE', 'ET', 'GH', 'ZA', 'EG', 'MA', 'TN', 'DZ', 'LY', 'SD', 'SS', 'TD', 'NE', 'ML', 'BF', 'CI', 'GN', 'SL', 'LR', 'SN', 'GM', 'GW', 'GN', 'CV', 'MR', 'SO', 'DJ', 'ER', 'UG', 'TZ', 'RW', 'BI', 'CD', 'CF', 'CM', 'GQ', 'GA', 'CG', 'AO', 'ZM', 'ZW', 'BW', 'NA', 'SZ', 'LS', 'MG', 'MU', 'SC', 'KM', 'YT', 'RE'];
+      
+      const aIsAfrican = africanCountries.includes(a);
+      const bIsAfrican = africanCountries.includes(b);
+      
+      if (aIsAfrican && !bIsAfrican) return -1;
+      if (!aIsAfrican && bIsAfrican) return 1;
+      
+      return a.localeCompare(b);
+    });
+
+    res.json({
+      success: true,
+      data: {
+        grouped: groupedRestaurants,
+        countries: sortedCountries,
+        restaurants: restaurants, // Keep flat list for backward compatibility
+      },
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // @desc    Get all restaurants with filters
 // @route   GET /api/restaurants
 // @access  Public
@@ -35,17 +246,44 @@ router.get('/', async (req, res, next) => {
     const limitNum = parseInt(limit as string);
     const skip = (pageNum - 1) * limitNum;
 
-    // Build where clause
+    // Build where clause - only US African restaurants
     const where: any = {
       isActive: true,
+      country: 'US', // Only US restaurants
+      // Default to African cuisine if no specific cuisine is requested
+      ...(cuisine ? {} : {
+        OR: [
+          { cuisine: { contains: 'African' } },
+          { cuisine: { contains: 'Ethiopian' } },
+          { cuisine: { contains: 'Nigerian' } },
+          { cuisine: { contains: 'Ghanaian' } },
+          { cuisine: { contains: 'Kenyan' } },
+          { cuisine: { contains: 'Somali' } },
+          { cuisine: { contains: 'Moroccan' } },
+          { cuisine: { contains: 'Egyptian' } },
+          { cuisine: { contains: 'South African' } },
+          { cuisine: { contains: 'West African' } },
+          { cuisine: { contains: 'East African' } },
+          { cuisine: { contains: 'North African' } },
+          { cuisine: { contains: 'Caribbean' } },
+          { cuisine: { contains: 'Jamaican' } },
+          { cuisine: { contains: 'Haitian' } },
+          { cuisine: { contains: 'Trinidadian' } },
+        ]
+      })
     };
 
     if (search) {
-      where.OR = [
-        { name: { contains: search as string } },
-        { description: { contains: search as string } },
-        { cuisine: { contains: search as string } },
-      ];
+      where.AND = where.AND || [];
+      where.AND.push({
+        OR: [
+          { name: { contains: search as string } },
+          { description: { contains: search as string } },
+          { cuisine: { contains: search as string } },
+          { city: { contains: search as string } },
+          { state: { contains: search as string } },
+        ]
+      });
     }
 
     if (cuisine) {
@@ -72,18 +310,22 @@ router.get('/', async (req, res, next) => {
     if (metroArea) {
       const metroAreaData = getMetroAreaById(metroArea as string);
       if (metroAreaData) {
-        where.OR = [
-          { city: { contains: metroAreaData.name } },
-          { state: metroAreaData.state },
-          {
-            AND: [
-              { latitude: { gte: metroAreaData.coordinates.latitude - 0.5 } },
-              { latitude: { lte: metroAreaData.coordinates.latitude + 0.5 } },
-              { longitude: { gte: metroAreaData.coordinates.longitude - 0.5 } },
-              { longitude: { lte: metroAreaData.coordinates.longitude + 0.5 } }
-            ]
-          }
-        ];
+        // Add metro area conditions to existing where clause instead of overriding
+        where.AND = where.AND || [];
+        where.AND.push({
+          OR: [
+            { city: { contains: metroAreaData.name } },
+            { state: metroAreaData.state },
+            {
+              AND: [
+                { latitude: { gte: metroAreaData.coordinates.latitude - 0.5 } },
+                { latitude: { lte: metroAreaData.coordinates.latitude + 0.5 } },
+                { longitude: { gte: metroAreaData.coordinates.longitude - 0.5 } },
+                { longitude: { lte: metroAreaData.coordinates.longitude + 0.5 } }
+              ]
+            }
+          ]
+        });
       }
     }
 
@@ -91,17 +333,21 @@ router.get('/', async (req, res, next) => {
     if (region) {
       const regionData = getRegionById(region as string);
       if (regionData) {
-        where.OR = [
-          { city: { contains: regionData.name } },
-          {
-            AND: [
-              { latitude: { gte: regionData.coordinates.latitude - 0.2 } },
-              { latitude: { lte: regionData.coordinates.latitude + 0.2 } },
-              { longitude: { gte: regionData.coordinates.longitude - 0.2 } },
-              { longitude: { lte: regionData.coordinates.longitude + 0.2 } }
-            ]
-          }
-        ];
+        // Add region conditions to existing where clause instead of overriding
+        where.AND = where.AND || [];
+        where.AND.push({
+          OR: [
+            { city: { contains: regionData.name } },
+            {
+              AND: [
+                { latitude: { gte: regionData.coordinates.latitude - 0.2 } },
+                { latitude: { lte: regionData.coordinates.latitude + 0.2 } },
+                { longitude: { gte: regionData.coordinates.longitude - 0.2 } },
+                { longitude: { lte: regionData.coordinates.longitude + 0.2 } }
+              ]
+            }
+          ]
+        });
       }
     }
 
@@ -149,6 +395,7 @@ router.get('/', async (req, res, next) => {
         orderBy,
         skip,
         take: limitNum,
+        distinct: ['name', 'address'], // Remove duplicates based on name and address
       }),
       prisma.restaurant.count({ where }),
     ]);
@@ -180,12 +427,12 @@ router.get('/', async (req, res, next) => {
 
     res.json({
       success: true,
-      data: restaurants,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
+      data: {
+        restaurants,
         total,
-        pages: Math.ceil(total / limitNum),
+        totalPages: Math.ceil(total / limitNum),
+        currentPage: pageNum,
+        limit: limitNum,
       },
     });
   } catch (error) {
@@ -501,6 +748,8 @@ router.post('/', async (req, res, next) => {
         priceRange: priceRange || 'MODERATE',
         rating: 0,
         reviewCount: 0,
+        latitude: 0, // Default coordinates - should be geocoded
+        longitude: 0,
         acceptsReservations: acceptsReservations || false,
         hasDelivery: hasDelivery || false,
         hasTakeout: hasTakeout || false,
@@ -514,13 +763,69 @@ router.post('/', async (req, res, next) => {
       },
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Restaurant added successfully',
       data: restaurant
     });
   } catch (error) {
-    next(error);
+    return next(error);
+  }
+});
+
+// Get similar restaurants
+router.get('/:id/similar', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { limit = 6 } = req.query;
+
+    // First get the current restaurant to find similar ones
+    const currentRestaurant = await prisma.restaurant.findUnique({
+      where: { id },
+      select: { cuisine: true, city: true, state: true }
+    });
+
+    if (!currentRestaurant) {
+      return res.status(404).json({
+        success: false,
+        message: 'Restaurant not found'
+      });
+    }
+
+    // Find similar restaurants by cuisine and location
+    const similarRestaurants = await prisma.restaurant.findMany({
+      where: {
+        AND: [
+          { id: { not: id } }, // Exclude current restaurant
+          { isActive: true },
+          {
+            OR: [
+              { cuisine: currentRestaurant.cuisine }, // Same cuisine
+              { city: currentRestaurant.city }, // Same city
+            ]
+          }
+        ]
+      },
+      include: {
+        photos: {
+          take: 1,
+          where: { isPrimary: true }
+        }
+      },
+      take: Number(limit),
+      orderBy: [
+        { cuisine: 'asc' }, // Prioritize same cuisine
+        { rating: 'desc' }, // Then by rating
+        { reviewCount: 'desc' } // Then by review count
+      ]
+    });
+
+    return res.json({
+      success: true,
+      data: similarRestaurants
+    });
+  } catch (error) {
+    return next(error);
   }
 });
 

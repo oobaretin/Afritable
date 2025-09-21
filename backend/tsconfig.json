@@ -35,6 +35,10 @@
   "exclude": [
     "node_modules",
     "dist",
-    "**/*.test.ts"
+    "**/*.test.ts",
+    "src/scripts/enhanceAfricanRestaurants.ts",
+    "src/scripts/enhanceWithGoogleMaps.ts",
+    "src/scripts/googleMapsRealData.ts",
+    "src/scripts/realGoogleMapsEnhancement.ts"
   ]
 }

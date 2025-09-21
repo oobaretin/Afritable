@@ -250,6 +250,7 @@ class RestaurantDataCollection {
           longitude: restaurantData.longitude,
           phone: restaurantData.phone,
           website: restaurantData.website,
+          email: restaurantData.email,
           rating: restaurantData.rating || 0,
           reviewCount: restaurantData.reviewCount || 0,
           priceRange: this.mapPriceRange(restaurantData.priceRange),
@@ -258,6 +259,23 @@ class RestaurantDataCollection {
           foursquareId: restaurantData.foursquareId,
           dataSource: this.determineDataSource(restaurantData),
           cuisine: restaurantData.cuisine || 'African',
+          // Add opening hours if available
+          ...(restaurantData.hours && {
+            mondayOpen: restaurantData.hours.mondayOpen,
+            mondayClose: restaurantData.hours.mondayClose,
+            tuesdayOpen: restaurantData.hours.tuesdayOpen,
+            tuesdayClose: restaurantData.hours.tuesdayClose,
+            wednesdayOpen: restaurantData.hours.wednesdayOpen,
+            wednesdayClose: restaurantData.hours.wednesdayClose,
+            thursdayOpen: restaurantData.hours.thursdayOpen,
+            thursdayClose: restaurantData.hours.thursdayClose,
+            fridayOpen: restaurantData.hours.fridayOpen,
+            fridayClose: restaurantData.hours.fridayClose,
+            saturdayOpen: restaurantData.hours.saturdayOpen,
+            saturdayClose: restaurantData.hours.saturdayClose,
+            sundayOpen: restaurantData.hours.sundayOpen,
+            sundayClose: restaurantData.hours.sundayClose,
+          })
         }
       });
 

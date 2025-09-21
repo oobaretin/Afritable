@@ -46,9 +46,28 @@ router.get('/metro-areas', async (req, res, next) => {
       })
     );
 
+    // Group metro areas by region
+    const groupedMetroAreas = {
+      'United States': metroAreasWithCounts.filter(metro => 
+        ['GA', 'TX', 'NY', 'CA', 'FL', 'IL', 'PA', 'OH', 'NC', 'MI', 'NJ', 'VA', 'WA', 'AZ', 'MA', 'TN', 'IN', 'MO', 'MD', 'WI', 'CO', 'MN', 'SC', 'AL', 'LA', 'KY', 'OR', 'OK', 'CT', 'UT', 'IA', 'NV', 'AR', 'MS', 'KS', 'NM', 'NE', 'WV', 'ID', 'HI', 'NH', 'ME', 'RI', 'MT', 'DE', 'SD', 'ND', 'AK', 'VT', 'WY', 'DC'].includes(metro.state)
+      ),
+      'Canada': metroAreasWithCounts.filter(metro => 
+        ['ON', 'BC', 'AB', 'QC', 'MB', 'SK', 'NS', 'NB', 'NL', 'PE', 'YT', 'NT', 'NU'].includes(metro.state)
+      ),
+      'Europe': metroAreasWithCounts.filter(metro => 
+        metro.name.includes('London') || metro.name.includes('Paris') || metro.name.includes('Berlin') || metro.name.includes('Amsterdam')
+      ),
+      'Africa': metroAreasWithCounts.filter(metro => 
+        metro.name.includes('Lagos') || metro.name.includes('Cairo') || metro.name.includes('Nairobi') || metro.name.includes('Accra')
+      ),
+      'Caribbean': metroAreasWithCounts.filter(metro => 
+        metro.name.includes('Jamaica') || metro.name.includes('Barbados') || metro.name.includes('Trinidad')
+      )
+    };
+
     return res.json({
       success: true,
-      data: metroAreasWithCounts
+      data: groupedMetroAreas
     });
   } catch (error) {
     return next(error);
